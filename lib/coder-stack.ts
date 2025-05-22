@@ -85,8 +85,6 @@ export class CoderStack extends cdk.Stack {
         image: ecs.ContainerImage.fromRegistry("ghcr.io/coder/coder:v2.21.3"),
         containerPort: 8080,
         environment: {
-          //CODER_ACCESS_URL: "https://coder.turing-ai.dev",
-          //CODER_WILDCARD_ACCESS_URL: "*.coder.turing-ai.dev",
           CODER_PG_CONNECTION_URL: `postgresql://postgres:postgres@${db.cluster.clusterEndpoint.socketAddress}/coder?sslmode=disable`,
           // Authentication
           CODER_DISABLE_PASSWORD_AUTH: "true",
