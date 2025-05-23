@@ -1,8 +1,7 @@
 import * as cdk from "aws-cdk-lib";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as ecs from "aws-cdk-lib/aws-ecs";
-import { NetworkLoadBalancedFargateService } from "aws-cdk-lib/aws-ecs-patterns";
-import * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
+import { ApplicationLoadBalancedFargateService } from "aws-cdk-lib/aws-ecs-patterns";
 import * as iam from "aws-cdk-lib/aws-iam";
 import { Construct } from "constructs";
 import { CoderDatabase } from "./coder-database";
@@ -71,7 +70,7 @@ export class CoderStack extends cdk.Stack {
     /**
      * ECS Service with ALB (coderd)
      */
-    const app = new NetworkLoadBalancedFargateService(this, "Service", {
+    const app = new ApplicationLoadBalancedFargateService(this, "Service", {
       cluster,
       runtimePlatform: {
         operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
@@ -104,7 +103,6 @@ export class CoderStack extends cdk.Stack {
     });
 
     app.targetGroup.configureHealthCheck({
-      protocol: elbv2.Protocol.HTTP,
       path: "/healthz",
       healthyThresholdCount: 3,
       unhealthyThresholdCount: 2,
@@ -112,42 +110,6 @@ export class CoderStack extends cdk.Stack {
       interval: cdk.Duration.seconds(5),
       healthyHttpCodes: "200",
     });
-
-    /**
-     * Security Group for Load Balancer
-     */
-    const lbSecurityGroup = new ec2.SecurityGroup(
-      app.loadBalancer,
-      "SecurityGroup",
-      {
-        vpc,
-        allowAllOutbound: false,
-      },
-    );
-
-    /**
-     * Managed prefix list for CloudFront origin facing IPs
-     */
-    const cfPrefixList = ec2.PrefixList.fromLookup(
-      this,
-      "CloudFrontPrefixList",
-      {
-        prefixListName: "com.amazonaws.global.cloudfront.origin-facing",
-      },
-    );
-
-    // Allow inbound traffic from CloudFront
-    lbSecurityGroup.connections.allowFrom(
-      ec2.Peer.prefixList(cfPrefixList.prefixListId),
-      ec2.Port.HTTP,
-      "from CloudFront",
-    );
-
-    // Allow outbound traffic to coderd
-    lbSecurityGroup.connections.allowTo(securityGroup, ec2.Port.tcp(8080));
-
-    // Attach security group to load balancer
-    app.loadBalancer.addSecurityGroup(lbSecurityGroup);
 
     const cdn = new CoderCDN(this, "CDN", {
       loadBalancer: app.loadBalancer,
