@@ -122,9 +122,9 @@ export class CoderStack extends cdk.Stack {
     );
 
     // Set the access URL for coderd
-    app.taskDefinition.defaultContainer?.addEnvironment(
-      "CODER_WILDCARD_ACCESS_URL",
-      `*.${cdn.distribution.domainName}`,
-    );
+    // app.taskDefinition.defaultContainer?.addEnvironment(
+    //   "CODER_WILDCARD_ACCESS_URL",
+    //   `*.${cdn.distribution.domainName}`,
+    // );
   }
 }
