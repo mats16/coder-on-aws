@@ -12,6 +12,17 @@ export class CoderStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    const coderVersion = new cdk.CfnParameter(this, "CoderVersion", {
+      description: "https://github.com/coder/coder/pkgs/container/coder",
+      type: "String",
+      default: "v2.21.3",
+      allowedPattern: "^v[0-9]+\\.[0-9]+\\.[0-9]+$",
+    });
+
+    const coderImage = ecs.ContainerImage.fromRegistry(
+      `ghcr.io/coder/coder:${coderVersion.valueAsString}`,
+    );
+
     const vpc = new ec2.Vpc(this, "Vpc", {
       ipAddresses: ec2.IpAddresses.cidr("10.0.0.0/16"),
       ipProtocol: ec2.IpProtocol.DUAL_STACK,
@@ -81,7 +92,7 @@ export class CoderStack extends cdk.Stack {
       desiredCount: 1,
       taskImageOptions: {
         containerName: "coder",
-        image: ecs.ContainerImage.fromRegistry("ghcr.io/coder/coder:v2.21.3"),
+        image: coderImage,
         containerPort: 8080,
         environment: {
           CODER_PG_CONNECTION_URL: `postgresql://postgres:postgres@${db.cluster.clusterEndpoint.socketAddress}/coder?sslmode=disable`,
